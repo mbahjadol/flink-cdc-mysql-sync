@@ -26,7 +26,7 @@ services:
         - "3308:3306"
 
     flink-jobmanager:
-      image: flink:1.17-scala_2.12
+      image: flink:1.20.3-scala_2.12-java8
       container_name: flink-jobmanager
       environment:
         - JOB_MANAGER_RPC_ADDRESS=flink-jobmanager
@@ -37,7 +37,7 @@ services:
         - ./flink/usrlib:/opt/flink/usrlib
 
     flink-taskmanager:
-      image: flink:1.17-scala_2.12
+      image: flink:1.20.3-scala_2.12-java8
       container_name: flink-taskmanager
       depends_on:
         - flink-jobmanager
