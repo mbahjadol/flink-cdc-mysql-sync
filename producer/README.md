@@ -21,6 +21,6 @@ Then setup for current python virtual environment
 
     uv pip install --upgrade pip setuptools wheel
     
-    pip install pymysql
+    uv pip install pymysql
 
-    pip list
+    uv pip list
