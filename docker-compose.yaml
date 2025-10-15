@@ -34,7 +34,9 @@ services:
       ports:
         - "8081:8081"
       volumes:
-        - ./flink/usrlib:/opt/flink/usrlib
+        - ./flink/usrlib/flink-sql-connector-mysql-cdc-3.5.0.jar:/opt/flink/usrlib/flink-sql-connector-mysql-cdc-3.5.0.jar
+        - ./flink/usrlib/flink-connector-jdbc-3.3.0-1.20.jar:/opt/flink/usrlib/flink-connector-jdbc-3.3.0-1.20.jar
+        - ./flink/usrlib/mysql-connector-j-8.3.0.jar:/opt/flink/usrlib/mysql-connector-j-8.3.0.jar
 
     flink-taskmanager:
       image: flink:1.20.3-scala_2.12-java8
@@ -45,7 +47,9 @@ services:
         - JOB_MANAGER_RPC_ADDRESS=flink-jobmanager
       command: taskmanager
       volumes:
-        - ./flink/usrlib:/opt/flink/usrlib
+        - ./flink/usrlib/flink-sql-connector-mysql-cdc-3.5.0.jar:/opt/flink/usrlib/flink-sql-connector-mysql-cdc-3.5.0.jar
+        - ./flink/usrlib/flink-connector-jdbc-3.3.0-1.20.jar:/opt/flink/usrlib/flink-connector-jdbc-3.3.0-1.20.jar
+        - ./flink/usrlib/mysql-connector-j-8.3.0.jar:/opt/flink/usrlib/mysql-connector-j-8.3.0.jar
 
 volumes:
     mysql_source_data:
