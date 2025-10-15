@@ -21,6 +21,6 @@ Then setup for current python virtual environment
 
     uv pip install --upgrade pip setuptools wheel
     
-    uv pip install pymysql
+    uv pip install pymysql cryptography
 
     uv pip list
