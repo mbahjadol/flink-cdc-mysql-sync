@@ -1,0 +1,102 @@
+{
+  "annotations": {
+    "list": [
+      {
+        "builtIn": 1,
+        "type": "dashboard",
+        "name": "Annotations & Alerts",
+        "enable": true
+      }
+    ]
+  },
+  "panels": [
+    {
+      "title": "MySQL Source: Uptime",
+      "type": "stat",
+      "targets": [
+        {
+          "expr": "mysql_up{instance=\"mysql-source-exporter:9104\"}",
+          "legendFormat": "Source",
+          "refId": "A"
+        }
+      ],
+      "gridPos": { "x": 0, "y": 0, "w": 6, "h": 3 }
+    },
+    {
+      "title": "MySQL Target: Uptime",
+      "type": "stat",
+      "targets": [
+        {
+          "expr": "mysql_up{instance=\"mysql-target-exporter:9104\"}",
+          "legendFormat": "Target",
+          "refId": "A"
+        }
+      ],
+      "gridPos": { "x": 6, "y": 0, "w": 6, "h": 3 }
+    },
+    {
+      "title": "Source - QPS (Queries per Second)",
+      "type": "graph",
+      "targets": [
+        {
+          "expr": "rate(mysql_global_status_queries{instance=\"mysql-source-exporter:9104\"}[1m])",
+          "legendFormat": "Source QPS",
+          "refId": "A"
+        }
+      ],
+      "gridPos": { "x": 0, "y": 3, "w": 12, "h": 6 }
+    },
+    {
+      "title": "Target - QPS (Queries per Second)",
+      "type": "graph",
+      "targets": [
+        {
+          "expr": "rate(mysql_global_status_queries{instance=\"mysql-target-exporter:9104\"}[1m])",
+          "legendFormat": "Target QPS",
+          "refId": "A"
+        }
+      ],
+      "gridPos": { "x": 0, "y": 9, "w": 12, "h": 6 }
+    },
+    {
+      "title": "Source - Threads Connected",
+      "type": "graph",
+      "targets": [
+        {
+          "expr": "mysql_global_status_threads_connected{instance=\"mysql-source-exporter:9104\"}",
+          "legendFormat": "Threads Connected (Source)",
+          "refId": "A"
+        }
+      ],
+      "gridPos": { "x": 0, "y": 15, "w": 12, "h": 6 }
+    },
+    {
+      "title": "Target - Threads Connected",
+      "type": "graph",
+      "targets": [
+        {
+          "expr": "mysql_global_status_threads_connected{instance=\"mysql-target-exporter:9104\"}",
+          "legendFormat": "Threads Connected (Target)",
+          "refId": "A"
+        }
+      ],
+      "gridPos": { "x": 0, "y": 21, "w": 12, "h": 6 }
+    },
+    {
+      "title": "Replication Delay (Seconds)",
+      "type": "graph",
+      "targets": [
+        {
+          "expr": "mysql_slave_seconds_behind_master{instance=\"mysql-target-exporter:9104\"}",
+          "legendFormat": "Replication Delay",
+          "refId": "A"
+        }
+      ],
+      "gridPos": { "x": 0, "y": 27, "w": 12, "h": 6 }
+    }
+  ],
+  "title": "MySQL CDC - Source/Target Overview",
+  "schemaVersion": 36,
+  "version": 2,
+  "refresh": "10s"
+}
