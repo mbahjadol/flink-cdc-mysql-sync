@@ -1,57 +1,182 @@
-# version: "3.8"
-
+# version: "3.9"
 services:
-    mysql-source:
-      image: mysql:8.0
-      container_name: mysql-source
-      restart: always
-      env_file:
-        - ./mysql-source/env.list
-      volumes:
-        - ./mysql-source/my.cnf:/etc/mysql/conf.d/my.cnf
-        - mysql_source_data:/var/lib/mysql
-      ports:
-        - "3307:3306"
+  # ============================================================
+  # 🐬 MySQL Source
+  # ============================================================
+  mysql-source:
+    image: mysql:8.3
+    container_name: mysql-source
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpwd
+    ports:
+      - "3307:3306"
+    volumes:
+      - mysql_source_data:/var/lib/mysql
+      - ./mysql-source/env.list:/env.list
 
-    mysql-target:
-      image: mysql:8.0
-      container_name: mysql-target
-      restart: always
-      env_file:
-        - ./mysql-target/env.list
-      volumes:
-        - ./mysql-target/my.cnf:/etc/mysql/conf.d/my.cnf
-        - mysql_target_data:/var/lib/mysql
-      ports:
-        - "3308:3306"
+  # ============================================================
+  # 🐬 MySQL Target
+  # ============================================================
+  mysql-target:
+    image: mysql:8.3
+    container_name: mysql-target
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpwd
+    ports:
+      - "3308:3306"
+    volumes:
+      - mysql_target_data:/var/lib/mysql
+      - ./mysql-target/env.list:/env.list
 
-    flink-jobmanager:
-      image: flink:1.20.3-scala_2.12-java8
-      container_name: flink-jobmanager
-      environment:
-        - JOB_MANAGER_RPC_ADDRESS=flink-jobmanager
-      command: jobmanager
-      ports:
-        - "8081:8081"
-      volumes:
-        - ./flink/usrlib/flink-sql-connector-mysql-cdc-3.5.0.jar:/opt/flink/usrlib/flink-sql-connector-mysql-cdc-3.5.0.jar
-        - ./flink/usrlib/flink-connector-jdbc-3.3.0-1.20.jar:/opt/flink/usrlib/flink-connector-jdbc-3.3.0-1.20.jar
-        - ./flink/usrlib/mysql-connector-j-8.3.0.jar:/opt/flink/usrlib/mysql-connector-j-8.3.0.jar
-        - ./flink/usrlib/pipeline.sql:/opt/flink/usrlib/pipeline.sql
+  # ============================================================
+  # 📤 Mysql Exporter (mysql-source logging activity)
+  # ============================================================
+  mysql-source-exporter:
+    image: prom/mysqld-exporter:latest
+    container_name: mysql-source-exporter
+    restart: always
+    ports:
+      - "9104:9104"
+    volumes:
+      - ./mysql-source/my.cnf:/etc/my.cnf:ro
+    command:
+      - --config.my-cnf=/etc/my.cnf
+    depends_on:
+      - mysql-source
+    # networks:
+    #   - default
 
-    flink-taskmanager:
-      image: flink:1.20.3-scala_2.12-java8
-      container_name: flink-taskmanager
-      depends_on:
-        - flink-jobmanager
-      environment:
-        - JOB_MANAGER_RPC_ADDRESS=flink-jobmanager
-      command: taskmanager
-      volumes:
-        - ./flink/usrlib/flink-sql-connector-mysql-cdc-3.5.0.jar:/opt/flink/usrlib/flink-sql-connector-mysql-cdc-3.5.0.jar
-        - ./flink/usrlib/flink-connector-jdbc-3.3.0-1.20.jar:/opt/flink/usrlib/flink-connector-jdbc-3.3.0-1.20.jar
-        - ./flink/usrlib/mysql-connector-j-8.3.0.jar:/opt/flink/usrlib/mysql-connector-j-8.3.0.jar
+  # ============================================================
+  # 📤 Mysql Exporter (mysql-target logging activity)
+  # ============================================================
+  mysql-target-exporter:
+    image: prom/mysqld-exporter:latest
+    container_name: mysql-target-exporter
+    restart: always
+    ports:
+      - "9105:9104"
+    volumes:
+      - ./mysql-target/my.cnf:/etc/my.cnf:ro
+    command:
+      - --config.my-cnf=/etc/my.cnf
+    depends_on:
+      - mysql-target
+    # networks:
+    #   - default
+        
+  # ============================================================
+  # 🌀 Apache Flink (JobManager)
+  # ============================================================
+  flink-jobmanager:
+    # image: flink:1.20.3-scala_2.12-java8
+    image: apache/flink:1.20.3-scala_2.12-java8
+    container_name: flink-jobmanager
+    hostname: flink-jobmanager
+    command: jobmanager
+    ports:
+      - "8081:8081"  # Flink UI
+    environment:
+      FLINK_PROPERTIES: |
+        jobmanager.rpc.address: flink-jobmanager 
+        metrics.reporters: prom 
+        metrics.reporter.prom.factory.class: org.apache.flink.metrics.prometheus.PrometheusReporterFactory
+        metrics.reporter.prom.port: 9249 
+        metrics.reporter.prom.hostname: 0.0.0.0 
+        metrics.reporter.prom.scope: jobmanager,taskmanager
+    # environment:
+    #   - |
+    #     FLINK_PROPERTIES=
+    #     jobmanager.rpc.address: flink-jobmanager
+    #     metrics.reporters: prom
+    #     metrics.reporter.prom.class: org.apache.flink.metrics.prometheus.PrometheusReporter
+    #     metrics.reporter.prom.port: 9249
+    #     metrics.reporter.prom.hostname: 0.0.0.0
+    volumes:
+      # - ./flink-jobmanager-extra-conf.yaml:/opt/flink/conf/flink-conf-extra.yaml
+      - ./flink/usrlib/pipeline.sql:/opt/flink/usrlib/pipeline.sql
+      - ./flink/usrlib/flink-sql-connector-mysql-cdc-3.5.0.jar:/opt/flink/usrlib/flink-sql-connector-mysql-cdc-3.5.0.jar
+      - ./flink/usrlib/flink-connector-jdbc-3.3.0-1.20.jar:/opt/flink/usrlib/flink-connector-jdbc-3.3.0-1.20.jar
+      - ./flink/usrlib/mysql-connector-j-8.3.0.jar:/opt/flink/usrlib/mysql-connector-j-8.3.0.jar
+      - ./flink/usrlib/flink-metrics-prometheus-1.20.3.jar:/opt/flink/opt/flink-metrics-prometheus-1.20.3.jar
 
+  # ============================================================
+  # 🌀 Apache Flink (TaskManager)
+  # ============================================================
+  flink-taskmanager:
+    # image: flink:1.20.3-scala_2.12-java8
+    image: apache/flink:1.20.3-scala_2.12-java8
+    container_name: flink-taskmanager
+    command: taskmanager
+    depends_on:
+      - flink-jobmanager
+    environment:
+      FLINK_PROPERTIES: |
+        jobmanager.rpc.address: flink-jobmanager
+        taskmanager.numberOfTaskSlots: 2
+        metrics.reporters: prom
+        metrics.reporter.prom.factory.class: org.apache.flink.metrics.prometheus.PrometheusReporterFactory
+        metrics.reporter.prom.port: 9249
+        metrics.reporter.prom.hostname: 0.0.0.0
+        metrics.reporter.prom.scope: jobmanager,taskmanager
+    # environment:
+    #   - |
+    #     FLINK_PROPERTIES=
+    #     jobmanager.rpc.address: flink-jobmanager
+    #     taskmanager.numberOfTaskSlots: 2
+    #     metrics.reporters: prom
+    #     metrics.reporter.prom.class: org.apache.flink.metrics.prometheus.PrometheusReporter
+    #     metrics.reporter.prom.port: 9249
+    #     metrics.reporter.prom.hostname: 0.0.0.0
+    volumes:
+      # - ./flink-taskmanager-extra-conf.yaml:/opt/flink/conf/flink-conf-extra.yaml
+      - ./flink/usrlib/flink-sql-connector-mysql-cdc-3.5.0.jar:/opt/flink/usrlib/flink-sql-connector-mysql-cdc-3.5.0.jar
+      - ./flink/usrlib/flink-connector-jdbc-3.3.0-1.20.jar:/opt/flink/usrlib/flink-connector-jdbc-3.3.0-1.20.jar
+      - ./flink/usrlib/mysql-connector-j-8.3.0.jar:/opt/flink/usrlib/mysql-connector-j-8.3.0.jar
+      - ./flink/usrlib/flink-metrics-prometheus-1.20.3.jar:/opt/flink/opt/flink-metrics-prometheus-1.20.3.jar
+
+  # ============================================================
+  # 📈 Prometheus
+  # ============================================================
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: flink-prometheus
+    restart: always
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+    depends_on:
+      - flink-jobmanager
+      - flink-taskmanager
+
+  # ============================================================
+  # 📊 Grafana
+  # ============================================================
+  grafana:
+    image: grafana/grafana:latest
+    container_name: flink-grafana
+    restart: always
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./grafana/provisioning/datasources/prometheus.yml:/etc/grafana/provisioning/datasources/prometheus.yml
+      - ./grafana/provisioning/dashboards/dashboard.yml:/etc/grafana/provisioning/dashboards/dashboard.yml
+      - ./grafana/provisioning/dashboards/mysql-cdc.json:/etc/grafana/provisioning/dashboards/mysql-cdc.json
+    depends_on:
+      - prometheus
+
+# ============================================================
+# 🌐 Network & Volumes
+# ============================================================
 volumes:
-    mysql_source_data:
-    mysql_target_data:
+  mysql_source_data:
+  mysql_target_data:
+
+networks:
+  default:
+    name: flink-cdc-net
