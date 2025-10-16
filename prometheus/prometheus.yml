@@ -7,7 +7,7 @@ scrape_configs:
     static_configs:
       - targets:
         - 'flink-jobmanager:9249'
-        - 'flink-taskmanager:9249'
+        - 'flink-taskmanager:9250'
   - job_name: 'mysql-source'
     static_configs:
       - targets: ['mysql-source-exporter:9104']

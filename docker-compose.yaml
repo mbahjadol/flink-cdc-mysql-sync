@@ -77,6 +77,7 @@ services:
     command: jobmanager
     ports:
       - "8081:8081"  # Flink UI
+      - "9249:9249"   # Prometheus metrics      
     environment:
       FLINK_PROPERTIES: |
         jobmanager.rpc.address: flink-jobmanager 
@@ -85,6 +86,7 @@ services:
         metrics.reporter.prom.port: 9249 
         metrics.reporter.prom.hostname: 0.0.0.0 
         metrics.reporter.prom.scope: jobmanager,taskmanager
+        pipeline.operator-chaining: false
     # environment:
     #   - |
     #     FLINK_PROPERTIES=
@@ -109,6 +111,8 @@ services:
     image: apache/flink:1.20.3-scala_2.12-java8
     container_name: flink-taskmanager
     command: taskmanager
+    ports:
+      - "9250:9250"   # Prometheus metrics    
     depends_on:
       - flink-jobmanager
     environment:
@@ -117,9 +121,11 @@ services:
         taskmanager.numberOfTaskSlots: 2
         metrics.reporters: prom
         metrics.reporter.prom.factory.class: org.apache.flink.metrics.prometheus.PrometheusReporterFactory
-        metrics.reporter.prom.port: 9249
+        metrics.reporter.prom.port: 9250
         metrics.reporter.prom.hostname: 0.0.0.0
         metrics.reporter.prom.scope: jobmanager,taskmanager
+        taskmanager.network.detailed-metrics: true
+        pipeline.operator-chaining: false
     # environment:
     #   - |
     #     FLINK_PROPERTIES=
@@ -167,6 +173,7 @@ services:
       - ./grafana/provisioning/datasources/prometheus.yml:/etc/grafana/provisioning/datasources/prometheus.yml
       - ./grafana/provisioning/dashboards/dashboard.yml:/etc/grafana/provisioning/dashboards/dashboard.yml
       - ./grafana/provisioning/dashboards/mysql-cdc.json:/etc/grafana/provisioning/dashboards/mysql-cdc.json
+      - ./grafana/provisioning/dashboards/flink-cdc-throughput.json:/etc/grafana/provisioning/dashboards/flink-cdc-throughput.json
     depends_on:
       - prometheus
 

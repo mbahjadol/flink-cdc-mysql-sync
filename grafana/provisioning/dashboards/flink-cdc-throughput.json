@@ -1,0 +1,118 @@
+{
+  "id": null,
+  "uid": "flink-cdc-throughput",
+  "title": "Flink CDC Throughput Monitoring",
+  "schemaVersion": 37,
+  "version": 1,
+  "refresh": "5s",
+  "datasource": {
+    "type": "prometheus",
+    "uid": "prometheus"
+  },
+  "panels": [
+    {
+      "type": "timeseries",
+      "title": "📥 Flink CDC Source Throughput (Records IN/sec)",
+      "targets": [
+        {
+          "expr": "sum(rate(flink_taskmanager_job_task_numRecordsInPerSecond{task_name=~\".*TableSourceScan.*mysql_source_users.*\"}[30s]))",
+          "legendFormat": "Source: {{task_name}}",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "ops",
+          "color": {
+            "mode": "palette-classic"
+          }
+        }
+      },
+      "options": {
+        "legend": {
+          "showLegend": true,
+          "displayMode": "table"
+        }
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 0,
+        "w": 24,
+        "h": 8
+      }
+    },
+    {
+      "type": "timeseries",
+      "title": "📤 Flink JDBC Sink Throughput (Records OUT/sec)",
+      "targets": [
+        {
+          "expr": "sum(rate(flink_taskmanager_job_task_numRecordsOutPerSecond{task_name=~\".*TableSink.*mysql_target_users.*\"}[30s]))",
+          "legendFormat": "Sink: {{task_name}}",
+          "refId": "B"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "ops",
+          "color": {
+            "mode": "palette-classic"
+          }
+        }
+      },
+      "options": {
+        "legend": {
+          "showLegend": true,
+          "displayMode": "table"
+        }
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 8,
+        "w": 24,
+        "h": 8
+      }
+    },
+    {
+      "type": "stat",
+      "title": "✅ Job Health Overview",
+      "targets": [
+        {
+          "expr": "count(flink_jobmanager_job_numRunningTasks)",
+          "refId": "C"
+        },
+        {
+          "expr": "sum(flink_jobmanager_job_numRestarts)",
+          "refId": "D"
+        }
+      ],
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "last"
+          ],
+          "fields": ""
+        },
+        "orientation": "horizontal",
+        "textMode": "value"
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 16,
+        "w": 24,
+        "h": 4
+      }
+    }
+  ],
+  "templating": {
+    "list": [
+      {
+        "name": "job_name",
+        "type": "query",
+        "datasource": "Prometheus",
+        "query": "label_values(flink_taskmanager_job_task_numRecordsInPerSecond, job_name)",
+        "refresh": 2,
+        "sort": 1
+      }
+    ]
+  }
+}
