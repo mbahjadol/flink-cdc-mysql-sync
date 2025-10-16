@@ -36,6 +36,10 @@ download_if_not_exists \
     https://repo1.maven.org/maven2/com/mysql/mysql-connector-j/8.3.0/mysql-connector-j-8.3.0.jar \
     mysql-connector-j-8.3.0.jar
 
+# --- Flink Prometheus Metrics Reporter ---
+download_if_not_exists \
+  https://repo1.maven.org/maven2/org/apache/flink/flink-metrics-prometheus/1.20.3/flink-metrics-prometheus-1.20.3.jar \
+  flink-metrics-prometheus-1.20.3.jar
 
 
 
