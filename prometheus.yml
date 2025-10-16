@@ -1,0 +1,16 @@
+global:
+  scrape_interval: 5s
+
+scrape_configs:
+  - job_name: 'flink'
+    metrics_path: /metrics
+    static_configs:
+      - targets:
+        - 'flink-jobmanager:9249'
+        - 'flink-taskmanager:9249'
+  - job_name: 'mysql-source'
+    static_configs:
+      - targets: ['mysql-source-exporter:9104']
+  - job_name: 'mysql-target'
+    static_configs:
+      - targets: ['mysql-target-exporter:9104']
