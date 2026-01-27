@@ -4,6 +4,68 @@ set -e
 echo "🚀 Starting Apache Flink CDC simulation environment..."
 echo "====================================================="
 
+
+# Step 0.1: Ensure pipeline.sql exists
+PIPELINE_FILE="./flink/usrlib/pipeline.sql"
+
+echo "🔍 Checking pipeline.sql..."
+if [ ! -f "$PIPELINE_FILE" ]; then
+  echo "📝 pipeline.sql not found, creating default pipeline..."
+  mkdir -p ./flink/usrlib
+
+  cat <<'EOF' > "$PIPELINE_FILE"
+-- ==========================================================
+-- Apache Flink CDC Pipeline
+-- MySQL Source  -> Flink CDC -> MySQL Target
+-- ==========================================================
+
+-- Source Table (MySQL CDC)
+CREATE TABLE mysql_source_users (
+  id INT,
+  name STRING,
+  ts TIMESTAMP(3),
+  PRIMARY KEY (id) NOT ENFORCED
+) WITH (
+  'connector' = 'mysql-cdc',
+  'hostname' = 'mysql-source',
+  'port' = '3306',
+  'username' = 'repl',
+  'password' = 'replpwd',
+  'database-name' = 'testdb',
+  'table-name' = 'users',
+  'scan.startup.mode' = 'initial'
+);
+
+-- Target Table (MySQL JDBC Sink)
+CREATE TABLE mysql_target_users (
+  id INT,
+  name STRING,
+  ts TIMESTAMP(3),
+  PRIMARY KEY (id) NOT ENFORCED
+) WITH (
+  'connector' = 'jdbc',
+  'url' = 'jdbc:mysql://mysql-target:3306/testdb',
+  'table-name' = 'users',
+  'username' = 'root',
+  'password' = 'rootpwd'
+);
+
+-- Streaming Replication Job
+INSERT INTO mysql_target_users
+SELECT
+  id,
+  name,
+  ts
+FROM mysql_source_users;
+-- ==========================================================
+EOF
+
+  echo "✅ Default pipeline.sql created at $PIPELINE_FILE"
+else
+  echo "✅ pipeline.sql already exists, using existing file"
+fi
+
+
 # Step 1: Start all containers
 echo "🔧 Starting Docker Compose services..."
 docker compose up -d
