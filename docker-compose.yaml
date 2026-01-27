@@ -175,7 +175,23 @@ services:
       - ./grafana/provisioning/dashboards/mysql-cdc.json:/etc/grafana/provisioning/dashboards/mysql-cdc.json
       - ./grafana/provisioning/dashboards/flink-cdc-throughput.json:/etc/grafana/provisioning/dashboards/flink-cdc-throughput.json
     depends_on:
-      - prometheus
+      - prometheus      
+
+  # ============================================================
+  # 🧪 Producer Simulation Service for generating workload 
+  # ============================================================
+  producer-svc:
+    container_name: producer-svc
+    build: ./producer-svc
+    hostname: producer-svc
+    environment:
+      DB_SERVER: mysql-source
+      DB_PORT: 3306
+      DB_USER: root
+      DB_PASSWORD: rootpwd
+      DB_NAME: testdb
+    ports:
+      - "8000:8000"
 
 # ============================================================
 # 🌐 Network & Volumes

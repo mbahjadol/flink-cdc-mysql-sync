@@ -68,7 +68,7 @@ fi
 
 # Step 1: Start all containers
 echo "🔧 Starting Docker Compose services..."
-docker compose up -d
+docker compose up -d --build --force-recreate
 
 # Step 2: Wait until MySQL source is ready
 source ./mysql-source/env.list
@@ -140,6 +140,10 @@ docker exec -i flink-jobmanager /opt/flink/bin/sql-client.sh  \
     -j /opt/flink/usrlib/flink-connector-jdbc-3.3.0-1.20.jar \
     -j /opt/flink/usrlib/mysql-connector-j-8.3.0.jar \
     -f /opt/flink/usrlib/pipeline.sql
+
+# Step 6.1: Run the data producer service
+echo "⚙️ Starting data producer service..."
+curl http://localhost:8000/sim-loop
 
 # Step 7: Display summary
 echo "🎯 Environment ready!"
