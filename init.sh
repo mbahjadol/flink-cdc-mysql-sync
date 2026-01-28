@@ -144,6 +144,8 @@ docker exec -i flink-jobmanager /opt/flink/bin/sql-client.sh  \
 # Step 6.1: Run the data producer service
 echo "⚙️ Starting data producer service..."
 curl http://localhost:8000/sim-loop
+echo
+echo
 
 # Step 7: Display summary
 echo "🎯 Environment ready!"
